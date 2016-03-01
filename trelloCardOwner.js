@@ -6,9 +6,19 @@ div.list-cards
         |__a.list-card-title, div.list-card-members
                                 |__ div.member
                                       |__ img.member-avatar OR span.member-initials
+
 ***********************************************************/
 var trelloCardOwner = (function() {
    var instance = {};
+
+   instance.pointsDiv = "<div class='points' style=" +
+      "'float: left;" +
+       "color: white;" +
+       "background-color: darkgreen;" +
+       "padding-right: 3px;" +
+       "padding-left: 3px;" +
+       "border-radius: 3px;" +
+       "margin-right: 5px;'> $$ </div>";
 
    instance.highlightOwner = function(listCard) {
      if (!listCard) {
@@ -19,8 +29,30 @@ var trelloCardOwner = (function() {
      if (!cardOwner) {
         var listCardTitle = listCard.querySelector('a.list-card-title');
         if (listCardTitle) {
-          listCardTitle.innerHTML = listCardTitle.innerHTML
-              .replace(/(\s)(\*)(\w+\b)$/, '<span class="cardOwner" style="visibility: hidden;">$3</span>');
+           var pointsElm = '';
+
+           var titleText =  listCardTitle.innerText;
+           var parsePoints = titleText.match(/^\((\d+)\)/);
+           var points = undefined;
+           if (parsePoints && parsePoints.length > 0) {
+             points = parsePoints[0].replace(/[\(\)]/g, '');
+           }
+
+           if (!points) {
+             points = listCard.querySelector('.badge-points.point-count') &&
+                 listCard.querySelector('.badge-points.point-count').innerText;
+           }
+
+          if (points) {
+             pointsElm = instance.pointsDiv.replace('$$', points);
+             var badges = listCard.querySelector('div.badges');
+             if (badges) {
+                badges.style.visibility = 'hidden';
+             }
+          }
+
+          listCardTitle.innerHTML = pointsElm + listCardTitle.innerHTML
+            .replace(/(\s)(\*)(\w+\b)$/, "<span class='cardOwner' style='visibility: hidden;'>$3</span>");
         }
 
         cardOwner = listCard.querySelector('span.cardOwner');
@@ -54,14 +86,17 @@ var trelloCardOwner = (function() {
   instance.columnObserver = new MutationObserver(function(mutations) {
     var changedListCardTitle = undefined;
     var addedListCard = undefined;
-
+console.log(mutations.length);
     instance.disconnectObserver();
 
     try {
         for (var i = 0; i < mutations.length; i++) {
             if (mutations[i].target.classList.contains('list-card-title')) {
                changedListCardTitle = mutations[i].target;
-               instance.highlightOwner(changedListCardTitle.parentElement.parentElement);
+               setTimeout(function() {
+                  instance.highlightOwner(changedListCardTitle.parentElement.parentElement);
+               }, 100);
+
                break; // only one of these can happen, no need to continue looping
             }
 
@@ -134,6 +169,7 @@ var trelloCardOwner = (function() {
     [].forEach.call(boardTiles, function(boardTile) {
         boardTile.addEventListener('click', instance.changeBoard);
     } );
+
   };
 
   return instance;
