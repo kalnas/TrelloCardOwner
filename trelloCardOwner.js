@@ -79,7 +79,7 @@ var trelloCardOwner = (function() {
         if (ownerName && title && title.toLowerCase().indexOf(ownerName.toLowerCase()) > -1) {
            member.setAttribute('style', 'border: 2px solid black; padding: 1px;');
         } else {
-           member.setAttribute('style', '');
+           member.setAttribute('style', 'border: 2px solid white; padding: 1px;');
         }
      });
   };
