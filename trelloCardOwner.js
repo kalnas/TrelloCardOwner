@@ -13,10 +13,9 @@ var trelloCardOwner = (function() {
 
    instance.pointsDiv = "<div class='points' style=" +
       "'float: left;" +
-       "color: white;" +
-       "background-color: black;" +
-       "padding-right: 3px;" +
-       "padding-left: 3px;" +
+       "color: black;" +
+       "background-color: #ccc;" +
+       "padding: 0 6px;" +
        "border-radius: 3px;" +
        "margin-right: 5px;'> $$ </div>";
 
@@ -77,9 +76,9 @@ var trelloCardOwner = (function() {
                     (span && span.getAttribute('title'));
 
         if (ownerName && title && title.toLowerCase().indexOf(ownerName.toLowerCase()) > -1) {
-           member.setAttribute('style', 'border: 2px solid black; padding: 1px;');
+           member.setAttribute('style', 'border: 4px double black;');
         } else {
-           member.setAttribute('style', 'border: 2px solid white; padding: 1px;');
+           member.setAttribute('style', 'border: 4px double white;');
         }
      });
   };
@@ -94,7 +93,6 @@ var trelloCardOwner = (function() {
   instance.columnObserver = new MutationObserver(function(mutations) {
     var changedListCardTitle = undefined;
     var addedListCard = undefined;
-console.log(mutations.length);
     instance.disconnectObserver();
 
     try {
@@ -157,7 +155,7 @@ console.log(mutations.length);
        setTimeout(instance.initialize, 1000);
        return;
     }
-    console.log('found cards');
+
     [].forEach.call(listCards, function(listCard) {
       instance.highlightOwner(listCard);
     });
@@ -183,5 +181,5 @@ console.log(mutations.length);
 
   return instance;
 })();
-console.log('trello card owner');
+
 trelloCardOwner.initialize();
