@@ -14,7 +14,7 @@ var trelloCardOwner = (function() {
    instance.pointsDiv = "<div class='points' style=" +
       "'float: left;" +
        "color: black;" +
-       "background-color: #ccc;" +
+       "background-color: #d6dadc;" +
        "padding: 0 6px;" +
        "border-radius: 3px;" +
        "margin-right: 5px;'> $$ </div>";
@@ -78,7 +78,7 @@ var trelloCardOwner = (function() {
         if (ownerName && title && title.toLowerCase().indexOf(ownerName.toLowerCase()) > -1) {
            member.setAttribute('style', 'border: 4px double black;');
         } else {
-           member.setAttribute('style', 'border: 4px double white;');
+           member.setAttribute('style', 'border: 4px solid white;');
         }
      });
   };
