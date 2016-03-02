@@ -14,7 +14,7 @@ var trelloCardOwner = (function() {
    instance.pointsDiv = "<div class='points' style=" +
       "'float: left;" +
        "color: white;" +
-       "background-color: darkgreen;" +
+       "background-color: black;" +
        "padding-right: 3px;" +
        "padding-left: 3px;" +
        "border-radius: 3px;" +
@@ -25,33 +25,41 @@ var trelloCardOwner = (function() {
          return;
      }
 
+     var listCardTitle = listCard.querySelector('a.list-card-title');
+     var pointsElm = '';
+     if (listCardTitle) {
+        var points = undefined;
+        var titleText =  listCardTitle.innerText;
+        var parsePoints = titleText.match(/^\((\d+)\)/);
+        if (parsePoints && parsePoints.length > 0) {
+          points = parsePoints[0].replace(/[\(\)]/g, '');
+        }
+
+        if (!points) {
+          points = listCard.querySelector('.badge-points.point-count') &&
+              listCard.querySelector('.badge-points.point-count').innerHTML;
+        }
+
+        if (points) {
+           pointsElm = instance.pointsDiv.replace('$$', points);
+           var badges = listCard.querySelector('div.badges');
+           if (badges) {
+               badges.style.visibility = 'hidden';
+           }
+        }
+     }
+
      var cardOwner = listCard.querySelector('span.cardOwner');
-     if (!cardOwner) {
-        var listCardTitle = listCard.querySelector('a.list-card-title');
+     if (!cardOwner || pointsElm) {
         if (listCardTitle) {
-           var pointsElm = '';
-
-           var titleText =  listCardTitle.innerText;
-           var parsePoints = titleText.match(/^\((\d+)\)/);
-           var points = undefined;
-           if (parsePoints && parsePoints.length > 0) {
-             points = parsePoints[0].replace(/[\(\)]/g, '');
+           var currPointsDiv = listCardTitle.querySelector('div.points');
+           if (currPointsDiv) {
+              points = currPointsDiv.innterText;
+              listCardTitle.removeChild(currPointsDiv);
            }
 
-           if (!points) {
-             points = listCard.querySelector('.badge-points.point-count') &&
-                 listCard.querySelector('.badge-points.point-count').innerText;
-           }
-
-          if (points) {
-             pointsElm = instance.pointsDiv.replace('$$', points);
-             var badges = listCard.querySelector('div.badges');
-             if (badges) {
-                badges.style.visibility = 'hidden';
-             }
-          }
-
-          listCardTitle.innerHTML = pointsElm + listCardTitle.innerHTML
+           listCardTitle.innerHTML = pointsElm + listCardTitle.innerHTML
+            .replace('(' + points + ')', '')
             .replace(/(\s)(\*)(\w+\b)$/, "<span class='cardOwner' style='visibility: hidden;'>$3</span>");
         }
 
@@ -69,7 +77,7 @@ var trelloCardOwner = (function() {
                     (span && span.getAttribute('title'));
 
         if (ownerName && title && title.toLowerCase().indexOf(ownerName.toLowerCase()) > -1) {
-           member.setAttribute('style', 'border: 4px double red');
+           member.setAttribute('style', 'border: 2px solid black; padding: 1px;');
         } else {
            member.setAttribute('style', '');
         }
@@ -95,7 +103,7 @@ console.log(mutations.length);
                changedListCardTitle = mutations[i].target;
                setTimeout(function() {
                   instance.highlightOwner(changedListCardTitle.parentElement.parentElement);
-               }, 100);
+               }, 1000);
 
                break; // only one of these can happen, no need to continue looping
             }
@@ -134,21 +142,22 @@ console.log(mutations.length);
      }, 1);
   };
 
-  instance.numCards = -1;
+  instance.numCards = 0;
   instance.attempts = 0;
   instance.initialize = function() {
     if (instance.attempts >= 10) {
+      instance.attempts = 0;
       return;
     }
 
     var listCards = document.querySelectorAll('div.list-card');
-    if (listCards.length !== instance.numCards) {
+    if (listCards.length !== instance.numCards || listCards.length === 0) {
        instance.numCards = listCards.length;
        instance.attempts++;
        setTimeout(instance.initialize, 1000);
        return;
     }
-
+    console.log('found cards');
     [].forEach.call(listCards, function(listCard) {
       instance.highlightOwner(listCard);
     });
@@ -174,5 +183,5 @@ console.log(mutations.length);
 
   return instance;
 })();
-
+console.log('trello card owner');
 trelloCardOwner.initialize();
