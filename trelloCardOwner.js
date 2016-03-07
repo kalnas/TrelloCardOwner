@@ -19,6 +19,31 @@ var trelloCardOwner = (function() {
        "border-radius: 3px;" +
        "margin-right: 5px;'> $$ </div>";
 
+   instance.refreshTotals = function() {
+       [].forEach.call( document.querySelectorAll('div.list'), function( list ) {
+          var pts = 0;
+          [].forEach.call(list.querySelectorAll('div.points'), function(points) {
+             var cardPoints = Number(points.innerHTML.trim());
+             pts += (Number.isNaN(cardPoints) ? 0 : cardPoints);
+          });
+
+          list.querySelector('span.list-total').setAttribute('style', 'visiblity: hidden;');
+
+          var parentHeader = list.querySelector('div.list-header');
+          var nameHeader = list.querySelector('h2.list-header-name');
+          var newPoints = list.querySelector('div.newPoints');
+
+          if (!newPoints) {
+             newPoints = document.createElement("div");
+             newPoints.className = 'newPoints';
+             newPoints.setAttribute('style', 'float: right; font-weight: bold;');
+             parentHeader.insertBefore(newPoints, nameHeader);
+          }
+
+          newPoints.innerHTML = pts;
+       });
+   };
+
    instance.highlightOwner = function(listCard) {
      if (!listCard) {
          return;
@@ -81,6 +106,8 @@ var trelloCardOwner = (function() {
            member.setAttribute('style', 'border: 4px solid white;');
         }
      });
+
+     setTimeout(instance.refreshTotals, 500);
   };
 
   instance.columnObserverConfig = {
