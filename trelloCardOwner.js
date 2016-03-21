@@ -12,7 +12,7 @@ NodeList.prototype.each = function(func) {
     [].forEach.call(this, function(item) {
         func(item);
     } );
-}
+};
 
 var defer = function(func) {
     window.setTimeout.apply(window, [func, 500].concat([].slice.call(arguments, 1)));
