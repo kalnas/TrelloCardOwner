@@ -14,21 +14,27 @@ NodeList.prototype.each = function(func) {
     } );
 }
 
-var instance = {};
-
-instance.pointsDiv = "<div class='points' style=" +
-    "'float: left;" +
-    " color: black;" +
-    " background-color: #d6dadc;" +
-    " padding: 0 6px;" +
-    " border-radius: 3px;" +
-    " margin-right: 5px;'> $$ </div>";
-
-instance.defer = function(func) {
+var defer = function(func) {
     window.setTimeout.apply(window, [func, 500].concat([].slice.call(arguments, 1)));
 };
 
-instance.refreshTotals = function() {
+var onVisible = function(options) {
+    options.attempts = options.attempts || 0
+    if (options.attempts >= 10) {
+        return;
+    }
+
+    options.parent = options.parent || document;
+    if (options.parent.querySelectorAll(options.selector).length == 0) {
+        options.attempts++;
+        defer(onVisible, options);
+        return;
+    }
+
+    options.func.apply(options.that, options.args);
+};
+
+var refreshTotals = function() {
     document.querySelectorAll('div.list').each(function(list) {
         var pts = 0;
         list.querySelectorAll('div.points').each(function(points) {
@@ -36,14 +42,14 @@ instance.refreshTotals = function() {
             pts += (Number.isNaN(cardPoints) ? 0 : cardPoints);
         });
 
-        var parentHeader = list.querySelector('div.list-header');
-        var nameHeader = list.querySelector('h2.list-header-name');
         var newPoints = list.querySelector('div.newPoints');
-
         if (!newPoints) {
             newPoints = document.createElement("div");
             newPoints.className = 'newPoints';
             newPoints.setAttribute('style', 'float: right; font-weight: bold;');
+
+            var parentHeader = list.querySelector('div.list-header');
+            var nameHeader = list.querySelector('h2.list-header-name');
             parentHeader.insertBefore(newPoints, nameHeader);
         }
 
@@ -51,7 +57,15 @@ instance.refreshTotals = function() {
     });
 };
 
-instance.highlightOwner = function(listCard) {
+var pointsDiv = "<div class='points' style=" +
+    "'float: left;" +
+    " color: black;" +
+    " background-color: #d6dadc;" +
+    " padding: 0 6px;" +
+    " border-radius: 3px;" +
+    " margin-right: 5px;'> $$ </div>";
+
+var highlightOwnerAndPoints = function(listCard) {
     if (!listCard) {
         return;
     }
@@ -65,7 +79,7 @@ instance.highlightOwner = function(listCard) {
         if (parsePoints && parsePoints.length > 0) {
             points = parsePoints[0].replace(/[\(\)]/g, '');
             if (points) {
-                pointsElm = instance.pointsDiv.replace('$$', points);
+                pointsElm = pointsDiv.replace('$$', points);
             }
         }
     }
@@ -102,63 +116,40 @@ instance.highlightOwner = function(listCard) {
         }
     });
 
-    instance.defer(instance.refreshTotals);
+    defer(refreshTotals);
 };
 
-instance.columnObserverConfig = {
-    childList: true,
-    characterData: false,
-    attributes: false,
-    subtree: true
-};
+var connectColumnObserver = function() {
+    var columnObserverConfig = {
+        childList: true,
+        characterData: false,
+        attributes: false,
+        subtree: true
+    };
 
-instance.columnObserver = new MutationObserver(function(mutations) {
-    instance.disconnectObserver();
-
-    try {
-        for (var i = 0; i < mutations.length; i++) {
-            if (mutations[i].target.classList.contains('list-card-title')) {
-                var changedListCardTitle = mutations[i].target;
-                instance.defer(function() {
-                    instance.highlightOwner(changedListCardTitle.parentElement.parentElement);
-                    document.querySelectorAll('div.list-card-details').each(function(cardLink) {
-                        cardLink.addEventListener('click', instance.hookCardsToPointSelector);
-                    });
-                });
-
-                break; // only one of these can happen, no need to continue looping
-            }
-
-            if (mutations[i].addedNodes && mutations[i].target.classList.contains('list-cards')) {
-                if (mutations[i].addedNodes.length > 0 && mutations[i].addedNodes[0].classList.contains('list-card')) {
-                    var addedListCard = mutations[i].addedNodes[0];
-                    instance.highlightOwner(addedListCard);
-                }
-            }
-        }
-
-    } finally {
-        instance.connectObserver();
-    }
-});
-
-instance.connectObserver = function() {
     document.querySelectorAll('div.list-cards').each(function(column) {
-        instance.columnObserver.observe(
+        columnObserver.observe(
             column,
-            instance.columnObserverConfig);
+            columnObserverConfig);
     });
 };
 
-instance.disconnectObserver = instance.columnObserver.disconnect;
+var pointAnchor =
+        "<a style='text-decoration: none;" +
+            "background-color: #c4c9cc;" +
+            "border-radius: 3px;" +
+            "font-size: 1.2em;" +
+            "padding-right: 5px;" +
+            "margin-left: 5px;" +
+            "padding-left: 5px;' href='#'>$$</a>";
 
-instance.changeBoard = function() {
-    instance.defer(instance.initialize);
-};
-
-instance.setupPointSelection = function() {
+var setupPointSelection = function() {
     var editControls = document.querySelector('div.edit-controls');
-    var pointSelector = editControls && editControls.querySelector('div.point-selector');
+    if (!editControls) {
+        return;
+    }
+
+    var pointSelector = editControls.querySelector('div.point-selector');
     if (pointSelector) {
         return;
     }
@@ -169,23 +160,20 @@ instance.setupPointSelection = function() {
 
     pointSelector.innerHTML =
         "Points: " +
-        "<a href='#'>1</a>  " +
-        "<a href='#'>2</a>  " +
-        "<a href='#'>3</a>  " +
-        "<a href='#'>5</a>  " +
-        "<a href='#'>8</a>  " +
-        "<a href='#'>13</a> ";
+        pointAnchor.replace('$$', 1) +
+        pointAnchor.replace('$$', 2) +
+        pointAnchor.replace('$$', 3) +
+        pointAnchor.replace('$$', 5) +
+        pointAnchor.replace('$$', 8) +
+        pointAnchor.replace('$$', 13);
 
     editControls.insertBefore(pointSelector, null);
 
     var setPoints = function() {
-        var caller = this;
-        instance.defer(function() {
-            var textArea = document.querySelector('.card-detail-title textarea.field');
-            var titleText = textArea.value;
-            titleText = '(' + caller.innerHTML + ') ' + titleText.replace(/\(\d+\)\s*/g, '');
-            textArea.value = titleText;
-        });
+        var textArea = document.querySelector('.card-detail-title textarea.field');
+        var titleText = textArea.value;
+        titleText = '(' + this.innerHTML + ') ' + titleText.replace(/\(\d+\)\s*/g, '');
+        textArea.value = titleText;
     };
 
     editControls.querySelectorAll('.point-selector a').each(function(point) {
@@ -193,58 +181,97 @@ instance.setupPointSelection = function() {
     });
 };
 
-instance.hookCardsToPointSelector = function() {
-    instance.defer(function() {
-        document.querySelector("div.card-detail-title").addEventListener("click", function() {
-            instance.defer(instance.setupPointSelection);
-        });
+var hookCardToPointSelector = function() {
+    onVisible({
+        selector: 'div.card-detail-title',
+        func: function() {
+            document.querySelector("div.card-detail-title").addEventListener("click", function() {
+                defer(setupPointSelection);
+            });
+        }
     });
 };
 
-instance.initialize = function(attempts, numCards) {
-    if (arguments.length === 0) {
-        attempts = 10;
-        numCards = -1;
+var columnObserver = new MutationObserver(function(mutations) {
+    columnObserver.disconnect();
+
+    try {
+        for (var i = 0; i < mutations.length; i++) {
+            if (mutations[i].target.classList.contains('list-card-title') ||
+                mutations[i].target.classList.contains('list-card-members')) {
+                var changedListCardTitle = mutations[i].target;
+                defer(function() {
+                    highlightOwnerAndPoints(changedListCardTitle.parentElement.parentElement);
+                });
+
+                break; // only one of these can happen, no need to continue looping
+            }
+
+            if (mutations[i].addedNodes && mutations[i].target.classList.contains('list-cards')) {
+                if (mutations[i].addedNodes.length > 0 && mutations[i].addedNodes[0].classList.contains('list-card')) {
+                    var addedListCard = mutations[i].addedNodes[0];
+                    highlightOwnerAndPoints(addedListCard);
+                }
+            }
+        }
+
+    } finally {
+        document.querySelectorAll('div.list-card-details').each(function(cardLink) {
+            cardLink.addEventListener('click', hookCardToPointSelector);
+        });
+
+        connectColumnObserver();
     }
+});
+
+var initialize = function(boardTitle, attempts, numCards) {
+    //console.log('initialize: ' + attempts ',' + numCards + ',' + boardTitle);
+
+    var titleAnchor = document.querySelector('a.board-header-btn-name');
+    var currentTitle = titleAnchor && titleAnchor.innerText;
+
+
+    attempts = attempts || 10;
+    numCards = numCards || -1;
 
     if (attempts < 1) {
         return;
     }
 
     var listCards = document.querySelectorAll('div.list-card');
-    if (listCards.length !== numCards || listCards.length === 0) {
-        instance.defer(instance.initialize, attempts - 1, listCards.length);
+    if (listCards.length !== numCards || listCards.length === 0 ||
+        (boardTitle && boardTitle === currentTitle)) {
+        defer(initialize, boardTitle, attempts - 1, listCards.length);
         return;
     }
 
     listCards.each(function(listCard) {
-        instance.highlightOwner(listCard);
+        highlightOwnerAndPoints(listCard);
     });
 
-    instance.connectObserver();
+    connectColumnObserver();
 
-    var boardHeader = document.querySelector('a.js-boards-menu');
-    if (boardHeader) {
-        boardHeader.addEventListener('click', function() {
-            var boards = document.querySelectorAll('a.js-open-board');
-            boards.each(function(board) {
-                board.addEventListener('click', instance.changeBoard);
-            });
-        });
-    }
+    var changeBoard = function() {
+        console.log('change board: ' + this);
+        defer(initialize);
+    };
+
+    document.querySelectorAll('a.js-open-board').each(function(boardLink) {
+        boardLink.addEventListener('click', changeBoard);
+    });
 
     document.querySelectorAll('a.board-tile').each(function(boardTile) {
-        boardTile.addEventListener('click', instance.changeBoard);
+        boardTile.addEventListener('click', changeBoard);
     });
 
-
-    instance.defer(function() {
-        document.querySelectorAll('div.list-card-details').each(function(cardLink) {
-            // TODO should just look for document.querySelector('.card-detail-window')
-            cardLink.addEventListener('click', instance.hookCardsToPointSelector);
-        });
+    onVisible({
+        selector: 'div.list-card-details',
+        func: function() {
+            document.querySelectorAll('div.list-card-details').each(function(cardLink) {
+               cardLink.addEventListener('click', hookCardToPointSelector);
+            });
+        }
     });
-
 };
 
-instance.initialize();
+initialize();
