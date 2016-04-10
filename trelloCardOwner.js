@@ -138,25 +138,24 @@ var pointAnchor =
         "<a style='text-decoration: none;" +
             "background-color: #c4c9cc;" +
             "border-radius: 3px;" +
-            "font-size: 1.2em;" +
+            "font-size: 1em;" +
             "padding-right: 5px;" +
             "margin-left: 5px;" +
             "padding-left: 5px;' href='#'>$$</a>";
 
 var setupPointSelection = function() {
-    var editControls = document.querySelector('div.edit-controls');
-    if (!editControls) {
+    var windowHeader = document.querySelector('div.window-header');
+    if (!windowHeader) {
         return;
     }
 
-    var pointSelector = editControls.querySelector('div.point-selector');
+    var pointSelector = windowHeader.querySelector('div.point-selector');
     if (pointSelector) {
         return;
     }
 
     pointSelector = document.createElement("div");
     pointSelector.className = 'point-selector';
-    pointSelector.setAttribute('style', 'float: right; font-weight: bold;');
 
     pointSelector.innerHTML =
         "Points: " +
@@ -167,27 +166,44 @@ var setupPointSelection = function() {
         pointAnchor.replace('$$', 8) +
         pointAnchor.replace('$$', 13);
 
-    editControls.insertBefore(pointSelector, null);
+    windowHeader.insertBefore(pointSelector, null);
+
+    // var membersList = document.querySelector('div.js-card-detail-members-list');
+    //
+    // if (membersList) {
+    //     membersList.querySelectorAll('span.member-initials, img.member-avatar').each(function() {
+    //
+    //     });
+    // }
+
 
     var setPoints = function() {
-        var textArea = document.querySelector('.card-detail-title textarea.field');
+        var textArea = document.querySelector('textarea.js-card-detail-title-input');
+        textArea.click();
         var titleText = textArea.value;
         titleText = '(' + this.innerHTML + ') ' + titleText.replace(/\(\d+\)\s*/g, '');
         textArea.value = titleText;
+
+        // Clicking away from title text area triggers saving of information entered
+        defer(function() {
+            var commentBox = document.querySelector('textarea.comment-box-input');
+            if (commentBox) {
+                commentBox.focus();
+                commentBox.setSelectionRange(0, 0);
+            }
+        });
     };
 
-    editControls.querySelectorAll('.point-selector a').each(function(point) {
+    windowHeader.querySelectorAll('.point-selector a').each(function(point) {
         point.addEventListener("click", setPoints, false);
     });
 };
 
 var hookCardToPointSelector = function() {
     onVisible({
-        selector: 'div.card-detail-title',
+        selector: 'textarea.js-card-detail-title-input',
         func: function() {
-            document.querySelector("div.card-detail-title").addEventListener("click", function() {
-                defer(setupPointSelection);
-            });
+            setupPointSelection();
         }
     });
 };
@@ -200,9 +216,9 @@ var columnObserver = new MutationObserver(function(mutations) {
             if (mutations[i].target.classList.contains('list-card-title') ||
                 mutations[i].target.classList.contains('list-card-members')) {
                 var changedListCardTitle = mutations[i].target;
-                defer(function() {
+                //defer(function() {
                     highlightOwnerAndPoints(changedListCardTitle.parentElement.parentElement);
-                });
+                //});
 
                 break; // only one of these can happen, no need to continue looping
             }
