@@ -46,7 +46,7 @@ var refreshTotals = function() {
         if (!newPoints) {
             newPoints = document.createElement("div");
             newPoints.className = 'newPoints';
-            newPoints.setAttribute('style', 'float: right; font-weight: bold;');
+            newPoints.setAttribute('style', 'float: right; font-weight: bold; margin-top: -20px;');
 
             var parentHeader = list.querySelector('div.list-header');
             var nameHeader = list.querySelector('h2.list-header-name');
