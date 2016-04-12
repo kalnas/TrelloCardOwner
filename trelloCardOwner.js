@@ -168,14 +168,22 @@ var setupPointSelection = function() {
 
     windowHeader.insertBefore(pointSelector, null);
 
-    // var membersList = document.querySelector('div.js-card-detail-members-list');
-    //
-    // if (membersList) {
-    //     membersList.querySelectorAll('span.member-initials, img.member-avatar').each(function() {
-    //
-    //     });
-    // }
+    var setOwner = function(e) {
+        var textArea = document.querySelector('textarea.js-card-detail-title-input');
+        textArea.click();
+        var titleText = textArea.value;
+        titleText = titleText.replace(/\*.+$/g, '*' + e.target.title.split(' ')[0]);
+        textArea.value = titleText;
 
+        // Clicking away from title text area triggers saving of information entered
+        defer(function() {
+            var commentBox = document.querySelector('textarea.comment-box-input');
+            if (commentBox) {
+                commentBox.focus();
+                commentBox.setSelectionRange(0, 0);
+            }
+        });
+    }
 
     var setPoints = function() {
         var textArea = document.querySelector('textarea.js-card-detail-title-input');
@@ -197,6 +205,11 @@ var setupPointSelection = function() {
     windowHeader.querySelectorAll('.point-selector a').each(function(point) {
         point.addEventListener("click", setPoints, false);
     });
+
+    var memberList = document.querySelector('div.js-card-detail-members-list');
+    if (memberList) {
+        memberList.addEventListener('click', setOwner);
+    }
 };
 
 var hookCardToPointSelector = function() {
