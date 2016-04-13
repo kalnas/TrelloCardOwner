@@ -172,7 +172,7 @@ var setupPointSelection = function() {
         var textArea = document.querySelector('textarea.js-card-detail-title-input');
         textArea.click();
         var titleText = textArea.value;
-        titleText = titleText.replace(/\*.+$/g, '*' + e.target.title.split(' ')[0]);
+        titleText = titleText.replace(/\s\*.+$/g, '') + ' *' + e.target.title.split(' ')[0];
         textArea.value = titleText;
 
         // Clicking away from title text area triggers saving of information entered
