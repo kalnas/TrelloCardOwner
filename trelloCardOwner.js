@@ -168,21 +168,26 @@ var setupPointSelection = function() {
 
     windowHeader.insertBefore(pointSelector, null);
 
+	function blurIt() {
+        // Clicking away from title text area triggers saving of information entered
+        defer(function() {
+            var commentBox = document
+            	.querySelector('div.card-detail-window')
+            	.querySelector('textarea.comment-box-input');
+            if (commentBox) {
+                commentBox.focus();
+                commentBox.setSelectionRange(0, 0);
+            }
+        });	
+	}
+
     var setOwner = function(e) {
         var textArea = document.querySelector('textarea.js-card-detail-title-input');
         textArea.click();
         var titleText = textArea.value;
         titleText = titleText.replace(/\s\*.+$/g, '') + ' *' + e.target.title.split(' ')[0];
         textArea.value = titleText;
-
-        // Clicking away from title text area triggers saving of information entered
-        defer(function() {
-            var commentBox = document.querySelector('textarea.comment-box-input');
-            if (commentBox) {
-                commentBox.focus();
-                commentBox.setSelectionRange(0, 0);
-            }
-        });
+		blurIt();
     }
 
     var setPoints = function() {
@@ -191,15 +196,7 @@ var setupPointSelection = function() {
         var titleText = textArea.value;
         titleText = '(' + this.innerHTML + ') ' + titleText.replace(/\(\d+\)\s*/g, '');
         textArea.value = titleText;
-
-        // Clicking away from title text area triggers saving of information entered
-        defer(function() {
-            var commentBox = document.querySelector('textarea.comment-box-input');
-            if (commentBox) {
-                commentBox.focus();
-                commentBox.setSelectionRange(0, 0);
-            }
-        });
+		blurIt();
     };
 
     windowHeader.querySelectorAll('.point-selector a').each(function(point) {
